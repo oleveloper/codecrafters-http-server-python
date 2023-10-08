@@ -2,9 +2,10 @@ import socket
 
 def main():
     server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
+    server_socket.listen()
 
     while True:
-      client_socket, address = server_socket.accept()
+      client_socket, client_address = server_socket.accept()
       data = client_socket.recv(1024)
       prepare_client(data, client_socket)
       client_socket.close()
