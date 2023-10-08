@@ -2,8 +2,12 @@ import socket
 
 def main():
     server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
-    client_socket, address = server_socket.accept()
 
+    while True:
+      client_socket, address = server_socket.accept()
+      prepare_client(client_socket)
+
+def prepare_client(client_socket):
     data = client_socket.recv(1024)
     lists = str(data).split("\\r\\n")
     path = lists[0].split(' ')[1].strip()
@@ -16,6 +20,8 @@ def main():
       client_socket.sendall(compose_response(text, len(text)).encode()) 
     else:
       client_socket.sendall(b"HTTP/1.1 404 NOT FOUND\r\n\r\n")
+
+    client_socket.close()
 
 def compose_response(text, text_len):
     status_line = "HTTP/1.1 200 OK"
