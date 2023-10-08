@@ -5,10 +5,12 @@ def main():
 
     while True:
       client_socket, address = server_socket.accept()
-      prepare_client(client_socket)
+      data = client_socket.recv(1024)
+      prepare_client(data, client_socket)
+      client_socket.close()
 
-def prepare_client(client_socket):
-    data = client_socket.recv(1024)
+
+def prepare_client(data, client_socket):
     lists = str(data).split("\\r\\n")
     path = lists[0].split(' ')[1].strip()
     text = lists[2].split(' ')[1] if path == "/user-agent" else path
@@ -21,7 +23,6 @@ def prepare_client(client_socket):
     else:
       client_socket.sendall(b"HTTP/1.1 404 NOT FOUND\r\n\r\n")
 
-    client_socket.close()
 
 def compose_response(text, text_len):
     status_line = "HTTP/1.1 200 OK"
