@@ -13,30 +13,40 @@ def main():
 
 
 def prepare_client(client_socket):
-    data = client_socket.recv(1024)
-    lists = str(data).split("\\r\\n")
-    path = lists[0].split(' ')[1].strip()
+    data = client_socket.recv(1024).decode()
+    lists = str(data).split("\r\n")
+    method = lists[0].split(' ')[0]
+    path = lists[0].split(' ')[1]
     text = lists[2].split(' ')[1] if path == "/user-agent" else path[path.find('/', 1) + 1:]
+    content = bytes(lists[-1], "utf-8") if len(lists) > 5 else ""
 
     if path == '/': 
       client_socket.send(b"HTTP/1.1 200 OK\r\n\r\n")
-    elif path.startswith('/echo/') or path.startswith("/files/")or path.startswith("/user-agent"):
-      if len(sys.argv) > 1 and os.path.exists(sys.argv[-1] + text) == False:
+    elif path.startswith('/echo/') or path.startswith("/files/") or path.startswith("/user-agent"):
+      if len(sys.argv) > 1 and os.path.exists(sys.argv[-1] + text) == False and method != "POST":
         client_socket.send(b"HTTP/1.1 404 NOT FOUND\r\n\r\n")
-      else: client_socket.send(compose_response(text).encode())
+      else: 
+        client_socket.send(compose_response(method, text, content).encode())
     else:
       client_socket.send(b"HTTP/1.1 404 NOT FOUND\r\n\r\n")
     
     client_socket.close()
 
 
-def compose_response(text):
+def compose_response(method, text, content):
     isFile = len(sys.argv) > 1
     if len(sys.argv) > 1:
-      text_len = os.path.getsize(sys.argv[-1] + text)
-      file = open(sys.argv[-1] + text, "rb")
-      text = file.read().decode('utf-8')
-      file.close()
+      file_path = sys.argv[-1] + text
+      if method == "POST":
+        with open(file_path, "wb") as file: 
+           file.write(content)
+           file.close()
+        return "HTTP/1.1 201 Created\r\n\r\n"
+      else: 
+        file = open(file_path, "rb")
+        text_len = os.path.getsize(file_path)
+        text = file.read().decode('utf-8')
+        file.close()
     else: 
       text_len = len(text) 
 
